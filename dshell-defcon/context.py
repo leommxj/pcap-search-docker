@@ -66,7 +66,7 @@ def context(fname, offset, len_body):
                 last_blob = data
                 last_dir = direction
             ff.close()
-            return timestamp, servport, cliport, output_data
+            return timestamp, servport, cliport, pkts_id, output_data
         current_offset += i
 
     ff.close()
@@ -75,8 +75,8 @@ def context(fname, offset, len_body):
 while True:
     try:
         fname, offset, len_body = raw_input().split('\t')
-        timestamp, servport, cliport, ret = context(fname, int(offset), int(len_body))
-        print "%s\t%d\t%d\t%d\t%d\t%s" % (fname, int(offset), timestamp, servport, cliport, ret)
+        timestamp, servport, cliport, pkts_id, ret = context(fname, int(offset), int(len_body))
+        print "%s\t%d\t%d\t%d\t%d\t%s\t%s" % (fname, int(offset), timestamp, servport, cliport, pkts_id, ret)
         sys.stdout.flush()
     except EOFError:
         break

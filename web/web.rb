@@ -172,10 +172,10 @@ get '/api/search' do
           h.puts "#{filepath}\t#{offset}\t#{len}"
           h.flush
           line = h.readline
-          _, offset, epoch, port0, port1, context = line.chomp.split "\t"
+          _, offset, epoch, port0, port1, pkts_id ,context = line.chomp.split "\t"
           epoch = epoch.to_i
           if epoch >= 0 && context && ! context.empty?
-            res << {filename: filepath.sub(/.*\/(.*)\.ap$/, '\1'), offset: offset.to_i, epoch: epoch, port0: port0.to_i, port1: port1.to_i, context: context}
+            res << {filename: filepath.sub(/.*\/(.*)\.ap$/, '\1'), offset: offset.to_i, epoch: epoch, port0: port0.to_i, port1: port1.to_i, pktid: pkts_id, context: context}
           end
         }
       end

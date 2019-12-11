@@ -4,7 +4,8 @@ setopt nullglob
 
 program=$0
 dshell_defcon=${0:a:h}/dshell-defcon
-pcap_suffix=.cap
+pcap_suffix=(.cap .pcap)
+pcapng_suffix=.pcapng
 ap_suffix=.ap
 opt_recursive=
 
@@ -61,6 +62,10 @@ rm_data() {
   rm -fv $filepath$ap_suffix
 }
 
+pcapng2pcap(){
+  tshark -F pcap -r $1 -w ${1%??}
+}
+
 parallel=$(nproc)
 while getopts hp:r opt; do
   case $opt; in
@@ -87,12 +92,22 @@ main() {
   log_status processing $@
 
   if [[ -n $opt_recursive ]]; then
-    for i in $@/**/*$pcap_suffix; do
-      [[ -e $i$ap_suffix && ! -z $i$ap_suffix ]] || add_data $i
+    for i in $@/**/*$pcapng_suffix; do
+	pcapng2pcap $i 
+    done
+    for j in $pcap_suffix[@]; do
+      for i in $@/**/*$j; do
+      		[[ -e $i$ap_suffix && ! -z $i$ap_suffix ]] || add_data $i
+      done
     done
   else
-    for i in $@/*$pcap_suffix; do
-      [[ -e $i$ap_suffix && ! -z $i$ap_suffix ]] || add_data $i
+    for i in $@/*$pcapng_suffix; do
+	pcapng2pcap $i 
+    done
+    for j in $pcap_suffix[@]; do
+      for i in $@/*$j; do
+      		[[ -e $i$ap_suffix && ! -z $i$ap_suffix ]] || add_data $i
+      done
     done
   fi
 
@@ -106,30 +121,43 @@ main() {
       else
         log_event MOVED_TO $filepath
       fi
-      if [[ ! $event =~ ISDIR && $filename =~ "\\$pcap_suffix\$" ]]; then
+      if [[ ! $event =~ ISDIR && $filename =~ "\\$pcapng_suffix\$" ]]; then
         if filetype=$(stat -c %F $filepath); then
           if [[ $filetype =~ symbolic ]]; then
-            add_data $filepath
-          elif [[ $filetype =~ regular ]]; then
-            add $filepath
+	    pcapng2pcap $filepath
+	  fi
+	fi
+      fi
+      for j in $pcap_suffix[@]; do
+        if [[ ! $event =~ ISDIR && $filename =~ "\\$j\$" ]]; then
+          if filetype=$(stat -c %F $filepath); then
+            if [[ $filetype =~ symbolic ]]; then
+              add_data $filepath
+            elif [[ $filetype =~ regular ]]; then
+              add $filepath
+            fi
           fi
         fi
-      fi
+      done
     elif [[ $event =~ 'DELETE|MOVED_FROM' ]]; then
       if [[ $event =~ DELETE ]]; then
         log_event DELETE $filepath
       else
         log_event MOVED_FROM $filepath
       fi
-      if [[ ! $event =~ ISDIR && $filename =~ "\\$pcap_suffix\$" ]]; then
-        del $filepath
-        rm_data $filepath
-      fi
+      for j in $pcap_suffix[@]; do
+        if [[ ! $event =~ ISDIR && $filename =~ "\\$j\$" ]]; then
+          del $filepath
+          rm_data $filepath
+        fi
+      done
     elif [[ $event =~ MODIFY ]]; then
       #log_event MODIFY $filepath
-      if [[ $filename =~ "\\$pcap_suffix\$" ]]; then
-        add $filepath
-      fi
+      for j in $pcap_suffix[@]; do
+        if [[ $filename =~ "\\$j\$" ]]; then
+          add $filepath
+        fi
+      done
     elif [[ $event =~ CLOSE_WRITE ]]; then
       if [[ -n ${modified[$filepath]:+1} ]]; then
         log_event CLOSE_WRITE after MODIFY $filepath

@@ -1,5 +1,6 @@
 FROM ubuntu:16.04
-RUN sed -i "s/archive.ubuntu.com/tw.archive.ubuntu.com/g" /etc/apt/sources.list
+RUN sed -i "s/archive.ubuntu.com/mirrors.ustc.edu.cn/g" /etc/apt/sources.list
+RUN sed -i "s/security.ubuntu.com/mirrors.ustc.edu.cn/g" /etc/apt/sources.list
 RUN apt-get update && apt-get install -y \
     vim\
     python2.7 python2.7-dev python-pip\
@@ -14,6 +15,8 @@ RUN apt-get update && apt-get install -y \
     psmisc \
     zsh \
     git
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y tshark
 
 RUN locale-gen en_US.UTF-8 && \
     pip install dpkt pypcap && \
